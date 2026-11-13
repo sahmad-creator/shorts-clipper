@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shorts Clipper</title>
+<meta name="description" content="YouTube video se apne aap viral shorts banao, popularity score ke saath. Free.">
+<style>
+  :root{
+    --bg:#fafaf7;--surface:#fff;--ink:#16171a;--mut:#62666f;--line:#e5e4de;
+    --acc:#e8412c;--acc-ink:#fff;--ok:#12805c;--ok-bg:#e3f4ec;--warn:#9a5b00;--warn-bg:#fdf0d8;--err:#b42318;--err-bg:#fde8e6;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#111214;--surface:#1a1b1e;--ink:#f1f1ee;--mut:#9a9ea8;--line:#2a2c31;
+      --acc:#ff5a43;--ok:#4cd7a1;--ok-bg:#12382b;--warn:#f3b85a;--warn-bg:#3a2d12;--err:#ff8b80;--err-bg:#3d1b18;
+      --shadow:none;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#111214;--surface:#1a1b1e;--ink:#f1f1ee;--mut:#9a9ea8;--line:#2a2c31;
+    --acc:#ff5a43;--ok:#4cd7a1;--ok-bg:#12382b;--warn:#f3b85a;--warn-bg:#3a2d12;--err:#ff8b80;--err-bg:#3d1b18;--shadow:none;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:0 16px}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
+  .logo{white-space:nowrap;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+  .logo i{width:26px;height:26px;border-radius:8px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-style:normal;font-size:14px}
+  @media (max-width:560px){nav a{display:none}}
+  nav a{color:var(--mut);text-decoration:none;margin-left:16px;font-size:14px}
+  nav a:hover{color:var(--ink)}
+  .hero{padding:32px 0 20px;text-align:center}
+  .hero h1{font-size:clamp(30px,6vw,52px);line-height:1.1;letter-spacing:-.03em;margin:0 0 12px;font-weight:800}
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero p{color:var(--mut);max-width:560px;margin:0 auto;font-size:18px}
+  .tool{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:20px;margin:24px 0}
+  .tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+  .tabs button{flex:1;padding:10px;border:0;border-radius:9px;background:transparent;color:var(--mut);font:inherit;font-weight:600;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .field{display:flex;gap:8px;flex-wrap:wrap}
+  input[type=url],input[type=text]{flex:1;min-width:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}
+  input:focus-visible,select:focus-visible,button:focus-visible,.drop:focus-visible{outline:3px solid color-mix(in srgb,var(--acc) 45%,transparent);outline-offset:2px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:14px;padding:28px 16px;text-align:center;cursor:pointer;color:var(--mut)}
+  .drop.over,.drop:hover{border-color:var(--acc);color:var(--ink)}
+  .drop b{color:var(--ink)}
+  .drop input{display:none}
+  .opts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:14px 0 0;color:var(--mut);font-size:14px}
+  select{padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}
+  .opts label{display:flex;align-items:center;gap:6px}
+  .go{width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:var(--acc);color:var(--acc-ink);font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+  .go:disabled{opacity:.55;cursor:wait}
+  .hint{font-size:13px;color:var(--mut);margin:10px 0 0}
+  /* progress */
+  #progress{display:none;margin-top:20px}
+  .steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .steps li{display:flex;gap:10px;align-items:center;color:var(--mut);font-size:15px}
+  .steps .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+  .steps li.active{color:var(--ink);font-weight:600}
+  .steps li.active .dot{border-color:var(--acc);border-top-color:transparent;animation:spin 1s linear infinite}
+  .steps li.done{color:var(--ink)}
+  .steps li.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.steps li.active .dot{animation:none}}
+  .note{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;display:none}
+  .note.queue{display:block;background:var(--warn-bg);color:var(--warn)}
+  .note.error{display:block;background:var(--err-bg);color:var(--err)}
+  /* results */
+  #results{display:none;margin:8px 0 32px}
+  #results h2{margin:0 0 4px}
+  .sub{color:var(--mut);margin:0 0 16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .card video{width:100%;aspect-ratio:9/16;background:#000;display:block}
+  .rank{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.65);color:#fff;font-weight:700;border-radius:999px;padding:3px 10px;font-size:13px}
+  .score{position:absolute;top:10px;right:10px;border-radius:999px;padding:4px 12px;font-weight:800;font-size:15px;background:var(--ok-bg);color:var(--ok)}
+  .score.mid{background:var(--warn-bg);color:var(--warn)}
+  .score.low{background:var(--err-bg);color:var(--err)}
+  .meta{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .meta .txt{font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .bars{display:grid;grid-template-columns:auto 1fr auto;gap:3px 8px;font-size:12px;color:var(--mut);align-items:center}
+  .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--acc)}
+  .row2{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mut);margin-top:auto}
+  a.dl{color:var(--acc-ink);background:var(--acc);text-decoration:none;font-weight:700;border-radius:9px;padding:7px 14px}
+  /* sections */
+  section.info{padding:32px 0;border-top:1px solid var(--line)}
+  section.info h2{font-size:26px;letter-spacing:-.02em;margin:0 0 16px}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .box b{display:block;font-size:22px;color:var(--acc);margin-bottom:2px}
+  .box h3{margin:0 0 4px;font-size:16px}
+  .box p{margin:0;color:var(--mut);font-size:14px}
+  details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:8px}
+  summary{cursor:pointer;font-weight:600}
+  details p{color:var(--mut);margin:8px 0 0}
+  footer{padding:24px 0 40px;color:var(--mut);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+  button.theme{background:none;border:1px solid var(--line);color:var(--mut);border-radius:9px;padding:6px 10px;cursor:pointer;font:inherit;font-size:13px;margin-left:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><i>▶</i> Shorts Clipper</div>
+    <nav><a href="#how">Kaise kaam karta hai</a><a href="#faq">FAQ</a><button class="theme" id="theme" aria-label="Theme badlo">Theme</button></nav>
+  </header>
+
+  <div class="hero">
+    <h1>Lambe video se <em>viral shorts</em>, apne aap</h1>
+    <p>YouTube link paste karo. Tool sabse popular hisse chun ke captions ke saath vertical shorts banata hai, aur har ek ko 0-100 score deta hai.</p>
+  </div>
+
+  <main>
+  <div class="tool" id="tool">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-link" aria-selected="true" aria-controls="p-link">YouTube link</button>
+      <button role="tab" id="tab-file" aria-selected="false" aria-controls="p-file">Video upload</button>
+    </div>
+
+    <div id="p-link" role="tabpanel" aria-labelledby="tab-link">
+      <div class="field"><input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.youtube.com/watch?v=..." aria-label="YouTube link"></div>
+      <p class="hint">Public video chahiye. "Most replayed" data se score sabse sahi banta hai.</p>
+    </div>
+
+    <div id="p-file" role="tabpanel" aria-labelledby="tab-file" hidden>
+      <label class="drop" id="drop" tabindex="0">
+        <input id="file" type="file" accept="video/*,audio/*">
+        <span id="dropText"><b>Video yahan drop karo</b> ya click karke chuno<br><small>mp4, mov, mkv, webm</small></span>
+      </label>
+      <p class="hint">Apni khud ki recording ya podcast ke liye best. Upload par "Most replayed" data nahi hota.</p>
+    </div>
+
+    <div class="opts">
+      <label>Kitne clips
+        <select id="top"><option value="3">3</option><option value="5" selected>5</option><option value="8">8</option><option value="12">12</option></select>
+      </label>
+      <label>Bhasha
+        <select id="lang"><option value="">Auto</option><option value="hi">Hindi</option><option value="en">English</option></select>
+      </label>
+      <label><input id="cap" type="checkbox" checked> Captions</label>
+    </div>
+
+    <button class="go" id="go">Clips banao</button>
+
+    <div id="progress" aria-live="polite">
+      <ul class="steps" id="steps"></ul>
+      <div class="note" id="note"></div>
+    </div>
+  </div>
+
+  <section id="results" aria-live="polite">
+    <h2 id="rTitle">Tumhare clips</h2>
+    <p class="sub" id="rSub"></p>
+    <div class="grid" id="grid"></div>
+  </section>
+  </main>
+
+  <section class="info" id="how">
+    <h2>Score kaise banta hai</h2>
+    <div class="cols">
+      <div class="box"><b>40%</b><h3>Most replayed</h3><p>YouTube par log sabse zyada kahan rewind karke dekhte hain.</p></div>
+      <div class="box"><b>30%</b><h3>Hook</h3><p>Pehli line mein sawaal, number ya strong shabd (Hindi aur English).</p></div>
+      <div class="box"><b>20%</b><h3>Energy</h3><p>Awaaz ki jaan aur bolne ki speed.</p></div>
+      <div class="box"><b>10%</b><h3>Length</h3><p>20 se 45 second ka clip sabse achha chalta hai.</p></div>
+    </div>
+    <p class="hint">Jis video par "Most replayed" data nahi hota, uska score baaki teen se banta hai.</p>
+  </section>
+
+  <section class="info" id="faq">
+    <h2>Aksar puche sawaal</h2>
+    <details><summary>Kitna time lagta hai?</summary><p>10 minute ke video par aam taur pe 3-8 minute. Pehli baar thoda zyada, kyunki AI model download hota hai. Ek time par ek hi video process hota hai, baaki line mein lagte hain.</p></details>
+    <details><summary>Kisi ka bhi video clip kar sakta hu?</summary><p>Sirf apne videos ya jinki permission ho. Dusron ke videos upload karne par copyright strike aa sakta hai.</p></details>
+    <details><summary>"YouTube ne block kiya" likha aaye to?</summary><p>Kabhi kabhi YouTube server se download rok deta hai. Tab "Video upload" tab mein video file daalo, ya tool ko apne PC par chalao.</p></details>
+    <details><summary>Clips kab tak rahenge?</summary><p>Kuch ghante tak. Turant download kar lo.</p></details>
+    <details><summary>Free hai kya?</summary><p>Haan, poora free hai, koi login ya payment nahi.</p></details>
+  </section>
+
+  <footer>Shorts Clipper &middot; free aur open source</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const STAGES = [
+  {k:"queue",  t:"Line mein hai"},
+  {k:"down",   t:"Video le raha hu"},
+  {k:"trans",  t:"Bol ko text mein badal raha hu"},
+  {k:"pick",   t:"Best moments chun raha hu"},
+  {k:"render", t:"Shorts bana raha hu"},
+];
+const NAMES = {heat:"Most replayed", hook:"Hook", energy:"Energy", length:"Length"};
+let mode = "link", file = null, busy = false, poller = null;
+
+/* theme */
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch(e){}
+$("theme").onclick = () => {
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cur = root.dataset.theme || (dark ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  root.dataset.theme = next;
+  try { localStorage.setItem("theme", next); } catch(e){}
+};
+
+/* tabs */
+function setMode(m) {
+  mode = m;
+  $("tab-link").setAttribute("aria-selected", m === "link");
+  $("tab-file").setAttribute("aria-selected", m === "file");
+  $("p-link").hidden = m !== "link";
+  $("p-file").hidden = m !== "file";
+}
+$("tab-link").onclick = () => setMode("link");
+$("tab-file").onclick = () => setMode("file");
+
+/* file pick / drop */
+function pick(f) {
+  if (!f) return;
+  file = f;
+  $("dropText").innerHTML = "<b>" + esc(f.name) + "</b><br><small>" + (f.size/1048576).toFixed(1) + " MB</small>";
+}
+$("file").onchange = e => pick(e.target.files[0]);
+$("drop").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
+["dragover","dragenter"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.add("over"); }));
+["dragleave","drop"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); }));
+$("drop").addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+
+/* progress ui */
+function showSteps(idx) {
+  $("steps").innerHTML = STAGES.map((s, i) =>
+    `<li class="${i < idx ? "done" : i === idx ? "active" : ""}"><span class="dot">${i < idx ? "✓" : ""}</span>${s.t}</li>`).join("");
+}
+function stageFrom(s) {
+  if (s.status === "queued") return 0;
+  const log = s.log.join(" ").toLowerCase();
+  if (log.includes("clip ") && log.includes("render")) return 4;
+  if (log.includes("clips chun") || log.includes("audio energy")) return 3;
+  if (log.includes("transcrib") || log.includes("transcript")) return 2;
+  if (log.includes("downloaded") || log.includes("video mil gaya")) return 2;
+  return 1;
+}
+function note(kind, msg) { const n = $("note"); n.className = "note" + (kind ? " " + kind : ""); n.textContent = msg || ""; }
+
+function reset() {
+  clearTimeout(poller);
+  $("results").style.display = "none"; $("grid").innerHTML = "";
+  $("progress").style.display = "block"; note("", ""); showSteps(0);
+}
+function fail(msg) { busy = false; $("go").disabled = false; $("go").textContent = "Clips banao"; note("error", msg); }
+
+$("go").onclick = async () => {
+  if (busy) return;
+  const top = +$("top").value, lang = $("lang").value, captions = $("cap").checked;
+  let req;
+  if (mode === "link") {
+    const url = $("url").value.trim();
+    if (!/youtu/.test(url)) { $("progress").style.display = "block"; return fail("Pehle ek sahi YouTube link paste karo."); }
+    req = fetch("/api/start", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({url, top, lang, captions})});
+  } else {
+    if (!file) { $("progress").style.display = "block"; return fail("Pehle ek video file chuno."); }
+    const fd = new FormData(); fd.append("video", file); fd.append("top", top); fd.append("lang", lang); fd.append("captions", captions ? "1" : "0");
+    req = fetch("/api/upload", {method:"POST", body: fd});
+  }
+  busy = true; $("go").disabled = true; $("go").textContent = "Ruko, kaam chal raha hai...";
+  reset();
+  try {
+    const r = await req, d = await r.json();
+    if (!r.ok || d.error) return fail(d.error || "Kuch gadbad ho gayi.");
+    poll(d.id);
+  } catch (e) { fail("Server se connect nahi ho paya. Page refresh karke dobara try karo."); }
+};
+
+async function poll(id) {
+  try {
+    const r = await fetch("/api/status/" + id), s = await r.json();
+    if (!r.ok) return fail(s.error || "Job nahi mila.");
+    if (s.status === "error") return fail(s.error);
+    if (s.status === "done") { showSteps(STAGES.length); busy = false; $("go").disabled = false; $("go").textContent = "Aur clips banao"; note("", ""); return render(id, s.result); }
+    showSteps(stageFrom(s));
+    note(s.queue_position ? "queue" : "", s.queue_position ? `Tumhara number ${s.queue_position} hai. Pehle wale video ke baad shuru hoga.` : "");
+    poller = setTimeout(() => poll(id), 2000);
+  } catch (e) { poller = setTimeout(() => poll(id), 4000); }
+}
+
+function esc(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML}
+function render(id, res) {
+  const clips = res.clips;
+  if (!clips.length) { return note("error", "Is video mein clip banane layak hissa nahi mila (bolne wala content kam hai)."); }
+  $("rSub").textContent = `${clips.length} clips mile, score ke hisaab se sorted. "${res.title}"`;
+  $("grid").innerHTML = clips.map((c, i) => {
+    const cls = c.score >= 70 ? "" : c.score >= 50 ? "mid" : "low";
+    const bars = Object.entries(c.breakdown).filter(([,v]) => v !== null).map(([k, v]) =>
+      `<span>${NAMES[k]}</span><div class="bar"><i style="width:${v}%"></i></div><span>${v}</span>`).join("");
+    return `<article class="card">
+      <span class="rank">#${i+1}</span><span class="score ${cls}" title="Popularity score">${c.score}</span>
+      <video src="/clips/${id}/${c.file}" controls playsinline preload="metadata"></video>
+      <div class="meta"><div class="txt">${esc(c.text)}</div>
+        <div class="bars">${bars}</div>
+        <div class="row2"><span>${Math.round(c.end - c.start)} sec</span><a class="dl" href="/clips/${id}/${c.file}" download="short_${i+1}_score${c.score}.mp4">Download</a></div>
+      </div></article>`;
+  }).join("");
+  $("results").style.display = "block";
+  $("results").scrollIntoView({behavior:"smooth", block:"start"});
+}
+</script>
+</body>
+</html>
