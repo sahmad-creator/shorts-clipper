@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: shorts-clipper
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: WHISPER_MODEL
+        value: tiny      # free server mein kam RAM hai; behtar Hindi ke liye "base" try karo
+      - key: MAX_MINUTES
+        value: "15"
+      - key: HOST
+        value: 0.0.0.0
