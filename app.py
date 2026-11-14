@@ -27,7 +27,7 @@ QLOCK = threading.Lock()
 def friendly(e):
     m = str(e)
     low = m.lower()
-    if "sign in to confirm" in low or "not a bot" in low:
+    if "sign in to confirm" in low or "not a bot" in low or "player response" in low or "http error 403" in low or "http error 429" in low:
         return "YouTube ne server ko block kiya. Is video ko apne PC se chalao ya 'Upload' tab mein video file daalo."
     if "private" in low or "unavailable" in low:
         return "Ye video private ya unavailable hai."

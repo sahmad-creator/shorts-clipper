@@ -89,7 +89,11 @@ def download(url, workdir, log=log_default):
         "quiet": True,
         "noplaylist": True,
         "ffmpeg_location": FFMPEG,
+        "retries": 3,
     }
+    if shutil.which("node"):
+        opts["js_runtimes"] = {"node": {}}
+        opts["remote_components"] = ["ejs:github"]
     with yt_dlp.YoutubeDL(opts) as ydl:
         pre = ydl.extract_info(url, download=False)
         check_duration(pre.get("duration") or 0)

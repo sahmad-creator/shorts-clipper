@@ -1,6 +1,6 @@
 # Free hosting: Hugging Face Spaces (SDK: Docker) ya koi bhi Docker server
 FROM python:3.11-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg fonts-noto-core && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg nodejs fonts-noto-core && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 1000 user
 USER user
 WORKDIR /home/user/app
