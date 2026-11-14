@@ -8,6 +8,6 @@ services:
       - key: WHISPER_MODEL
         value: tiny      # free server mein kam RAM hai; behtar Hindi ke liye "base" try karo
       - key: MAX_MINUTES
-        value: "15"
+        value: "30"
       - key: HOST
         value: 0.0.0.0

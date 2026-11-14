@@ -36,10 +36,17 @@ Button dabao, GitHub se login karo, **Apply** dabao. 5-10 minute mein tera link 
    ```
 4. Build hone do (5-10 min), link ban jayega.
 
+**Tez banane ke liye (1 minute ka kaam, free):**
+Bina key ke transcript free server par bahut dheema hota hai. Groq ki free Whisper API se wo kuch second mein ho jata hai:
+1. https://console.groq.com par Google se login karo, **API Keys > Create API Key**, key copy karo.
+2. Render mein apni service kholo: **Environment > Add Environment Variable**: Key `GROQ_API_KEY`, Value wo key. **Save**, service apne aap dobara chalegi.
+
+Phir video chuno, aur kuch hi second mein clips aur score mil jate hain. Download dabane par us clip ka asli 9:16 video ~10 second mein banta hai.
+
 **Free server ki sachchai:**
-- Free server dheema hota hai, 10 minute ke video mein 10-20 minute lag sakte hain. Ek time par ek hi video chalta hai, baaki line mein lagte hain.
-- **YouTube aksar server (datacenter) wale IP ko block kar deta hai.** Tab website saaf message dikhati hai aur "Video upload" tab chalta rehta hai. Apne PC par YouTube link hamesha chalta hai.
-- Limits (`MAX_MINUTES`, `MAX_UPLOAD_MB`, `KEEP_HOURS`) environment variables se badal sakte ho.
+- Server 15 minute idle rehne par so jata hai, pehla page khulne mein ~50 second lag sakte hain.
+- **YouTube aksar server (datacenter) wale IP ko block kar deta hai.** Tab website saaf message dikhati hai aur "Video upload" tab chalta rehta hai (wahi sabse pakka tareeka).
+- Limits (`MAX_MINUTES`, `MAX_UPLOAD_MB`, `KEEP_HOURS`) environment variables se badal sakte ho. Clips 6 ghante baad delete hote hain.
 
 ## Score kaise banta hai (0-100)
 
@@ -54,7 +61,7 @@ Jis video par "Most replayed" data nahi hota (kam views, ya upload), uska score 
 
 ## Settings (optional)
 
-- **Tez chalana:** `WHISPER_MODEL=base`. **Behtar Hindi:** `medium` (slow).
+- **Groq key ke bina** (apne PC par) local model chalta hai: tez ke liye `WHISPER_MODEL=base`, behtar Hindi ke liye `medium` (slow).
 - **Better hook scoring:** free Gemini key (https://aistudio.google.com/apikey) ko `GEMINI_API_KEY` mein daalo.
 - `MAX_MINUTES`, `MAX_UPLOAD_MB`, `KEEP_HOURS` se limits badlo.
 - Bina website ke: `python pipeline.py "LINK" --top 5 --lang hi`

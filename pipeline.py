@@ -50,7 +50,8 @@ def ensure_font(log=None):
         return
     for i, url in enumerate(FONT_URLS):
         try:
-            urllib.request.urlretrieve(url, os.path.join(FONT_DIR, f"NotoSansDevanagari{i}.ttf"))
+            with urllib.request.urlopen(url, timeout=15) as r, open(os.path.join(FONT_DIR, f"NotoSansDevanagari{i}.ttf"), "wb") as o:
+                o.write(r.read())
             return
         except Exception:
             continue
@@ -98,7 +99,7 @@ def download(url, workdir, log=log_default):
         pre = ydl.extract_info(url, download=False)
         check_duration(pre.get("duration") or 0)
         info = ydl.extract_info(url, download=True)
-    files = [f for f in glob.glob(os.path.join(workdir, "source.*")) if not f.endswith((".part", ".wav", ".json"))]
+    files = [f for f in glob.glob(os.path.join(workdir, "source.*")) if not f.endswith((".part", ".wav", ".json", ".mp3"))]
     if not files:
         raise RuntimeError("Download failed: no video file found")
     meta = {
@@ -112,6 +113,44 @@ def download(url, workdir, log=log_default):
 
 # ---------- 2. transcript ----------
 def transcribe(video_path, language=None, log=log_default):
+    """Fast path: Groq's free Whisper API (needs GROQ_API_KEY). Falls back to local faster-whisper."""
+    key = os.environ.get("GROQ_API_KEY")
+    if key:
+        try:
+            return transcribe_groq(video_path, key, language, log)
+        except Exception as e:
+            log(f"Tez transcript nahi hua ({str(e)[:90]}), local model se kar raha hu (dheema)...")
+    return transcribe_local(video_path, language, log)
+
+
+def transcribe_groq(video_path, key, language, log):
+    import requests
+
+    log("Transcribing (Groq, tez)...")
+    mp3 = os.path.splitext(video_path)[0] + ".mp3"
+    subprocess.run([FFMPEG, "-y", "-i", video_path, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "48k", mp3],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if os.path.getsize(mp3) > 24 * 1024 * 1024:
+        raise RuntimeError("audio bahut badi hai")
+    data = {"model": os.environ.get("GROQ_MODEL", "whisper-large-v3-turbo"),
+            "response_format": "verbose_json", "timestamp_granularities[]": "segment"}
+    if language:
+        data["language"] = language
+    with open(mp3, "rb") as f:
+        r = requests.post(os.environ.get("GROQ_URL", "https://api.groq.com/openai/v1/audio/transcriptions"),
+                          headers={"Authorization": f"Bearer {key}"},
+                          files={"file": ("audio.mp3", f, "audio/mpeg")}, data=data, timeout=240)
+    if r.status_code >= 400:
+        raise RuntimeError(f"Groq {r.status_code}: {r.text[:120]}")
+    out = [{"start": s["start"], "end": s["end"], "text": s["text"].strip()}
+           for s in r.json().get("segments", []) if s["text"].strip()]
+    if not out:
+        raise RuntimeError("transcript khaali")
+    log(f"Transcript ready: {len(out)} segments")
+    return out
+
+
+def transcribe_local(video_path, language=None, log=log_default):
     from faster_whisper import WhisperModel
 
     size = os.environ.get("WHISPER_MODEL", "small")
@@ -260,14 +299,17 @@ def write_ass(path, segments, start, end):
         f.write(head + "\n".join(lines) + "\n")
 
 
-def render_clip(video, segments, clip, outdir, idx, captions=True):
+def render_clip(video, segments, clip, outdir, idx, captions=True, width=720):
+    if captions:
+        ensure_font()
+    height = width * 16 // 9
     name = f"clip_{idx:02d}"
     ass = f"{name}.ass"
     write_ass(os.path.join(outdir, ass), segments, clip["start"], clip["end"])
     vf = (
         "[0:v]split[a][b];"
-        "[a]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,boxblur=6:2,scale=1080:1920[bg];"
-        "[b]scale=1080:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2"
+        f"[a]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,boxblur=6:2,scale={width}:{height}[bg];"
+        f"[b]scale={width}:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2"
     )
     for f in glob.glob(os.path.join(FONT_DIR, "*.ttf")):
         shutil.copy(f, outdir)
@@ -276,18 +318,16 @@ def render_clip(video, segments, clip, outdir, idx, captions=True):
     cmd = [
         FFMPEG, "-y", "-ss", f"{clip['start']:.2f}", "-i", os.path.abspath(video),
         "-t", f"{clip['end'] - clip['start']:.2f}", "-filter_complex", vf, "-map", "[v]", "-map", "0:a?",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-movflags", "+faststart", out,
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "25", "-c:a", "aac", "-movflags", "+faststart", out,
     ]
     subprocess.run(cmd, cwd=outdir, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     return out
 
 
 # ---------- orchestrator ----------
-def run(url, outdir, top=5, language=None, captions=True, log=log_default, local_file=None):
+def run(url, outdir, top=5, language=None, captions=True, log=log_default, local_file=None, render_clips=True):
     """url = YouTube link, or pass local_file= path of an uploaded video."""
     os.makedirs(outdir, exist_ok=True)
-    if captions:
-        ensure_font(log)
     if local_file:
         dur = file_duration(local_file)
         check_duration(dur)
@@ -302,8 +342,10 @@ def run(url, outdir, top=5, language=None, captions=True, log=log_default, local
     chosen = pick_clips(segments, meta, env, top, log)
     results = []
     for n, c in enumerate(chosen, 1):
-        log(f"Clip {n}/{len(chosen)} render ho raha hai...")
-        f = render_clip(video, segments, c, outdir, n, captions)
+        if render_clips:
+            log(f"Clip {n}/{len(chosen)} render ho raha hai...")
+            render_clip(video, segments, c, outdir, n, captions)
+        f = f"clip_{n:02d}.mp4"
         results.append({
             "file": f, "start": round(c["start"], 1), "end": round(c["end"], 1),
             "score": c["score"], "text": c["text"],
@@ -312,7 +354,8 @@ def run(url, outdir, top=5, language=None, captions=True, log=log_default, local
     with open(os.path.join(outdir, "results.json"), "w", encoding="utf-8") as f:
         json.dump({"title": meta["title"], "clips": results}, f, ensure_ascii=False, indent=2)
     log("Done!")
-    return {"title": meta["title"], "clips": results}
+    return {"title": meta["title"], "clips": results,
+            "_data": {"video": video, "segments": segments, "chosen": chosen, "captions": captions}}
 
 
 if __name__ == "__main__":

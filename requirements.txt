@@ -1,6 +1,7 @@
 yt-dlp[default]
 faster-whisper
 flask
+gunicorn
 numpy
 requests
 imageio-ffmpeg

@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=user . .
 ENV HOST=0.0.0.0 PORT=7860 WHISPER_MODEL=base MAX_MINUTES=30
 EXPOSE 7860
-CMD ["python", "app.py"]
+CMD ["sh", "-c", "gunicorn -w 1 --threads 8 -t 900 -b 0.0.0.0:${PORT:-7860} app:app"]
